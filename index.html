@@ -96,6 +96,13 @@
 
       <div id="chat-section" class="hidden">
          <p>Vous êtes dans le salon : <strong id="current-room-display"></strong></p>
+
+         <div
+            style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;">
+            <strong>Utilisateurs dans le salon :</strong>
+            <ul id="users-list" style="list-style-type: none; padding-left: 0; margin-top: 5px; font-size: 0.9em;">
+            </ul>
+         </div>
          <ul id="messages"></ul>
          <form id="form-chat">
             <input id="message-input" autocomplete="off" placeholder="Votre message..." />
@@ -118,6 +125,7 @@
       const formChat = document.getElementById('form-chat');
       const messageInput = document.getElementById('message-input');
       const messages = document.getElementById('messages');
+      const usersList = document.getElementById('users-list');
 
       let currentUsername = '';
       let currentRoom = '';
@@ -166,6 +174,22 @@
          item.textContent = data.message;
          messages.appendChild(item);
          messages.scrollTop = messages.scrollHeight;
+      });
+
+      socket.on('room users', (users) => {
+         usersList.innerHTML = ''; // Vide la liste actuelle
+
+         users.forEach(username => {
+            const item = document.createElement('li');
+
+            // Mettre en évidence l'utilisateur actuel
+            if (username === currentUsername) {
+               item.innerHTML = `👤 <strong>${username} (vous)</strong>`;
+            } else {
+               item.textContent = `• ${username}`;
+            }
+            usersList.appendChild(item);
+         });
       });
 
       socket.on('connect', () => {

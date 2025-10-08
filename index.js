@@ -12,6 +12,23 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'))
 })
 
+// Fonction pour mettre à jour la liste des utilisateurs dans un salon
+async function updateRoomUsers(room) {
+  // 1. Récupère les IDs de tous les sockets dans le salon 'room'
+  const socketIdsInRoom = await io.in(room).allSockets() // 2. Map les IDs pour récupérer les données (username) de chaque socket
+  const users = Array.from(socketIdsInRoom)
+    .map((socketId) => {
+      const socket = io.sockets.sockets.get(socketId)
+      return socket ? socket.data.username : null
+    })
+    .filter((username) => username) // Filtre les pseudos non définis // 3. Émet l'événement 'room users' à tous les clients du salon
+
+  io.to(room).emit('room users', users)
+  console.log(
+    `Liste des utilisateurs de ${room} mise à jour: ${users.join(', ')}`
+  )
+}
+
 // Écoute des connexions Socket.IO
 io.on('connection', (socket) => {
   console.log('Un utilisateur est connecté')
@@ -26,6 +43,8 @@ io.on('connection', (socket) => {
       message: `${data.username} a rejoint le salon ${data.room}.`,
     })
     console.log(`${data.username} a rejoint le salon ${data.room}`)
+
+    updateRoomUsers(data.room)
   })
 
   socket.on('chat message', (data) => {
@@ -40,14 +59,19 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Un utilisateur est déconnecté')
-    if (socket.data.username && socket.data.room) {
+    const username = socket.data.username
+    const room = socket.data.room
+
+    if (username && room) {
       // Notifie les autres membres du salon que l'utilisateur est parti
-      socket.to(socket.data.room).emit('room message', {
-        message: `${socket.data.username} a quitté le salon ${socket.data.room}.`,
+      socket.to(room).emit('room message', {
+        message: `${username} a quitté le salon ${room}.`,
       })
-      console.log(
-        `${socket.data.username} a quitté le salon ${socket.data.room}`
-      )
+      console.log(`${username} a quitté le salon ${room}`)
+
+      setTimeout(() => {
+        updateRoomUsers(room)
+      }, 50)
     }
   })
 })
