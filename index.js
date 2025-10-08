@@ -7,6 +7,8 @@ const app = express()
 const server = http.createServer(app)
 const io = new Server(server)
 
+const activeRooms = new Map()
+
 // Servir le fichier index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'))
@@ -14,37 +16,64 @@ app.get('/', (req, res) => {
 
 // Fonction pour mettre à jour la liste des utilisateurs dans un salon
 async function updateRoomUsers(room) {
-  // 1. Récupère les IDs de tous les sockets dans le salon 'room'
-  const socketIdsInRoom = await io.in(room).allSockets() // 2. Map les IDs pour récupérer les données (username) de chaque socket
+  const socketIdsInRoom = await io.in(room).allSockets()
   const users = Array.from(socketIdsInRoom)
     .map((socketId) => {
       const socket = io.sockets.sockets.get(socketId)
       return socket ? socket.data.username : null
     })
-    .filter((username) => username) // Filtre les pseudos non définis // 3. Émet l'événement 'room users' à tous les clients du salon
+    .filter((username) => username)
+
+  if (users.length > 0) {
+    activeRooms.set(room, users.length)
+  } else {
+    activeRooms.delete(room)
+  }
 
   io.to(room).emit('room users', users)
   console.log(
     `Liste des utilisateurs de ${room} mise à jour: ${users.join(', ')}`
   )
+
+  updateRoomsList()
+}
+
+function updateRoomsList() {
+  const rooms = Array.from(activeRooms.keys())
+  io.emit('rooms list', rooms)
+  console.log(`Liste des salons actifs diffusée: ${rooms.join(', ')}`)
 }
 
 // Écoute des connexions Socket.IO
 io.on('connection', (socket) => {
   console.log('Un utilisateur est connecté')
 
+  updateRoomsList()
+
   socket.on('join room', (data) => {
-    socket.join(data.room) // Ajoute le socket au salon
-    socket.data.username = data.username // Stocke le pseudo
-    socket.data.room = data.room // Stocke le salon actuel
+    const { username, oldRoom, newRoom } = data
+
+    if (oldRoom && oldRoom !== newRoom) {
+      socket.leave(oldRoom)
+
+      socket.to(oldRoom).emit('room message', {
+        message: `${username} a quitté le salon ${oldRoom}.`,
+      })
+
+      setTimeout(() => updateRoomUsers(oldRoom), 50)
+    }
+
+    socket.join(newRoom) // Ajoute le socket au salon
+    socket.data.username = username // Stocke le pseudo
+    socket.data.room = newRoom // Stocke le salon actuel
 
     // Notifie tous les membres du salon (y compris le nouveau)
-    io.to(data.room).emit('room message', {
-      message: `${data.username} a rejoint le salon ${data.room}.`,
+    io.to(newRoom).emit('room message', {
+      message: `${username} a rejoint le salon ${newRoom}.`,
     })
-    console.log(`${data.username} a rejoint le salon ${data.room}`)
+    console.log(`${username} a rejoint le salon ${newRoom}`)
 
-    updateRoomUsers(data.room)
+    updateRoomUsers(newRoom)
   })
 
   socket.on('chat message', (data) => {

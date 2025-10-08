@@ -86,6 +86,13 @@
    <div id="chat-container">
       <h1>Chat Multi-Salons</h1>
 
+      <div id="available-rooms"
+         style="margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #e9ecef;">
+         <strong>Salons disponibles :</strong>
+         <div id="rooms-buttons-container" style="margin-top: 5px;">
+         </div>
+      </div>
+
       <div id="join-section">
          <form id="form-join">
             <input id="username-input" autocomplete="off" placeholder="Votre pseudo" required />
@@ -95,8 +102,9 @@
       </div>
 
       <div id="chat-section" class="hidden">
-         <p>Vous êtes dans le salon : <strong id="current-room-display"></strong></p>
-
+         <p>Vous êtes dans le salon : <strong id="current-room-display"></strong><button id="change-room-btn"
+               style="float: right; padding: 5px 10px; background-color: #f0ad4e; color: white; border: none; border-radius: 4px; cursor: pointer;">Changer
+               de salon</button></p>
          <div
             style="margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f9f9f9;">
             <strong>Utilisateurs dans le salon :</strong>
@@ -126,23 +134,59 @@
       const messageInput = document.getElementById('message-input');
       const messages = document.getElementById('messages');
       const usersList = document.getElementById('users-list');
+      const changeRoomBtn = document.getElementById('change-room-btn');
+      const roomsButtonsContainer = document.getElementById('rooms-buttons-container');
+
 
       let currentUsername = '';
       let currentRoom = '';
+
+      function switchRoom(newRoom) {
+         if (!currentUsername) {
+            alert("Veuillez d'abord définir votre pseudo.");
+            return;
+         }
+
+         if (newRoom === currentRoom) {
+            return;
+         }
+
+         const oldRoom = currentRoom;
+         currentRoom = newRoom;
+         currentRoomDisplay.textContent = currentRoom;
+
+         roomInput.value = currentRoom;
+
+         socket.emit('join room', {
+            username: currentUsername,
+            newRoom: currentRoom,
+            oldRoom: oldRoom
+         });
+
+         messages.innerHTML = '';
+         usersList.innerHTML = '';
+
+         joinSection.classList.add('hidden');
+         chatSection.classList.remove('hidden');
+
+         console.log(`Changement de salon vers : ${newRoom}`);
+      }
 
       // 1. Gérer la soumission du formulaire de connexion
       formJoin.addEventListener('submit', (e) => {
          e.preventDefault();
          if (usernameInput.value && roomInput.value) {
             currentUsername = usernameInput.value;
-            currentRoom = roomInput.value;
-            currentRoomDisplay.textContent = currentRoom;
 
-            socket.emit('join room', { username: currentUsername, room: currentRoom });
-
-            joinSection.classList.add('hidden');
-            chatSection.classList.remove('hidden');
+            switchRoom(roomInput.value);
          }
+      });
+
+      changeRoomBtn.addEventListener('click', () => {
+         chatSection.classList.add('hidden');
+         joinSection.classList.remove('hidden');
+         usernameInput.value = currentUsername;
+         roomInput.value = currentRoom;
       });
 
       // 2. Gérer la soumission du formulaire de chat
@@ -189,6 +233,40 @@
                item.textContent = `• ${username}`;
             }
             usersList.appendChild(item);
+         });
+      });
+
+      socket.on('rooms list', (rooms) => {
+         roomsButtonsContainer.innerHTML = ''; // Vide l'ancien contenu
+
+         rooms.forEach(roomName => {
+            if (roomName.startsWith('/')) return; // Ignore les salons Socket.IO internes
+
+            const button = document.createElement('button');
+            button.textContent = roomName;
+
+            // Style basique pour les boutons de salon
+            button.style.marginRight = '5px';
+            button.style.padding = '5px 10px';
+            button.style.cursor = 'pointer';
+            button.style.border = '1px solid #007bff';
+            button.style.borderRadius = '4px';
+
+            // Mettre en évidence le salon actuel
+            if (roomName === currentRoom) {
+               button.style.backgroundColor = '#007bff';
+               button.style.color = 'white';
+            } else {
+               button.style.backgroundColor = 'white';
+               button.style.color = '#007bff';
+            }
+
+            // Gère le clic : appelle la fonction switchRoom
+            button.addEventListener('click', () => {
+               switchRoom(roomName);
+            });
+
+            roomsButtonsContainer.appendChild(button);
          });
       });
 
