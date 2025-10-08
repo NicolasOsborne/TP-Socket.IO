@@ -28,6 +28,16 @@ io.on('connection', (socket) => {
     console.log(`${data.username} a rejoint le salon ${data.room}`)
   })
 
+  socket.on('chat message', (data) => {
+    // Émet le message uniquement aux clients du salon spécifié
+    io.to(data.room).emit('chat message', {
+      username: data.username,
+      room: data.room,
+      message: data.message,
+    })
+    console.log(`[${data.room}] ${data.username}: ${data.message}`)
+  })
+
   socket.on('disconnect', () => {
     console.log('Un utilisateur est déconnecté')
   })

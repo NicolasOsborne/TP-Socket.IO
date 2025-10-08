@@ -141,8 +141,11 @@
       formChat.addEventListener('submit', (e) => {
          e.preventDefault();
          if (messageInput.value) {
-            // TODO: Émettre un événement 'chat message' vers le serveur
-            // avec le message, le pseudo et le salon actuel.
+            socket.emit('chat message', {
+               username: currentUsername,
+               room: currentRoom,
+               message: messageInput.value
+            });
             messageInput.value = '';
          }
       });
