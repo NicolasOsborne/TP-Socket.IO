@@ -40,6 +40,15 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Un utilisateur est déconnecté')
+    if (socket.data.username && socket.data.room) {
+      // Notifie les autres membres du salon que l'utilisateur est parti
+      socket.to(socket.data.room).emit('room message', {
+        message: `${socket.data.username} a quitté le salon ${socket.data.room}.`,
+      })
+      console.log(
+        `${socket.data.username} a quitté le salon ${socket.data.room}`
+      )
+    }
   })
 })
 
