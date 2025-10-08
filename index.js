@@ -9,9 +9,11 @@ const io = new Server(server)
 
 const activeRooms = new Map()
 
+app.use(express.static(path.join(__dirname, 'frontend')))
+
 // Servir le fichier index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'))
+  res.sendFile(path.join(__dirname, 'frontend/index.html'))
 })
 
 // Fonction pour mettre à jour la liste des utilisateurs dans un salon

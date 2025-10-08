@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>ChatSocket</title>
+   <link rel="stylesheet" href="styles/styles.css">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+
+<body>
+   <div id="chat-container">
+      <div class="title-bar">
+         <div class="title-bar-text">ChatSocket</div>
+         <div class="title-bar-controls">
+            <button aria-label="Minimize"></button>
+            <button aria-label="Maximize"></button>
+            <button aria-label="Close"></button>
+         </div>
+      </div>
+
+      <div id="available-rooms">
+         <strong>Salons disponibles :</strong>
+         <div id="rooms-buttons-container">
+         </div>
+      </div>
+
+      <div id="join-section">
+         <form id="form-join">
+            <input id="username-input" autocomplete="off" placeholder="Votre pseudo" required />
+            <input id="room-input" autocomplete="off" placeholder="Nom du salon (ex: général, dev)" required />
+            <button type="submit">Rejoindre le salon</button>
+         </form>
+      </div>
+
+      <div id="chat-section" class="hidden">
+         <div class="current-room">
+            <div class="current-room-title">
+               <strong>Vous êtes dans le salon :</strong>
+               <button id="change-room-btn">Changer de salon</button>
+            </div>
+            <p id="current-room-display"></p>
+         </div>
+         <div class="users-list-container">
+            <strong>Utilisateurs dans le salon :</strong>
+            <ul id="users-list">
+            </ul>
+         </div>
+         <ul id="messages"></ul>
+         <form id="form-chat">
+            <input id="message-input" autocomplete="off" placeholder="Votre message..." />
+            <button type="submit">Envoyer</button>
+         </form>
+      </div>
+   </div>
+
+   <script src="/socket.io/socket.io.js"></script>
+   <script src="js/script.js"></script>
+</body>
+
+</html>
