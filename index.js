@@ -16,6 +16,18 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   console.log('Un utilisateur est connecté')
 
+  socket.on('join room', (data) => {
+    socket.join(data.room) // Ajoute le socket au salon
+    socket.data.username = data.username // Stocke le pseudo
+    socket.data.room = data.room // Stocke le salon actuel
+
+    // Notifie tous les membres du salon (y compris le nouveau)
+    io.to(data.room).emit('room message', {
+      message: `${data.username} a rejoint le salon ${data.room}.`,
+    })
+    console.log(`${data.username} a rejoint le salon ${data.room}`)
+  })
+
   socket.on('disconnect', () => {
     console.log('Un utilisateur est déconnecté')
   })

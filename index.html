@@ -130,8 +130,7 @@
             currentRoom = roomInput.value;
             currentRoomDisplay.textContent = currentRoom;
 
-            // TODO: Émettre un événement 'join room' vers le serveur
-            // avec le pseudo et le nom du salon.
+            socket.emit('join room', { username: currentUsername, room: currentRoom });
 
             joinSection.classList.add('hidden');
             chatSection.classList.remove('hidden');
